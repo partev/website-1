@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	recurringSKU = "plan_FZzqRxfQtAx34O"
+	recurringSKU             = "plan_FZzqRxfQtAx34O"
+	captchaValidationTimeout = 5 * time.Second
 )
 
 var (
@@ -52,7 +53,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	}
 
 	// Captcha validation
-	captchaCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	captchaCtx, cancel := context.WithTimeout(ctx, captchaValidationTimeout)
 	defer cancel()
 	if err := verifyRecaptcha(captchaCtx, req.Captcha); err != nil {
 		return nil, fmt.Errorf("captcha: %w", err)
@@ -124,6 +125,8 @@ func recurringParams(count int) *stripe.CheckoutSessionParams {
 	}
 }
 
+// verifyRecaptcha checks the given token against Google's verification
+// service and returns nil if it checks out.
 func verifyRecaptcha(ctx context.Context, token string) error {
 	req, err := http.NewRequest(http.MethodPost, "https://www.google.com/recaptcha/api/siteverify", nil)
 	if err != nil {
