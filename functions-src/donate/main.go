@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
@@ -137,11 +138,26 @@ func verifyRecaptcha(ctx context.Context, token string) error {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("create captcha request: %w", err)
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("captcha check said %d %s", resp.StatusCode, resp.Status)
+		return fmt.Errorf("captcha check: %d %s", resp.StatusCode, resp.Status)
 	}
+	bs, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("read captcha response: %w", err)
+	}
+
+	var captchaResponse struct {
+		Success bool
+	}
+	if err := json.Unmarshal(bs, &captchaResponse); err != nil {
+		return fmt.Errorf("unmarshal captcha response: %w", err)
+	}
+	if !captchaResponse.Success {
+		return errors.New("captcha check failed")
+	}
+
 	return nil
 }
