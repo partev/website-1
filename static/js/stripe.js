@@ -11,28 +11,35 @@ function solvedCaptcha(token) {
 function redirect(sessionID) {
     stripe.redirectToCheckout({ sessionId: sessionID }).then(function (result) {
         if (result.error) {
-            var displayError = document.getElementById('error-message');
-            displayError.textContent = result.error.message;
+            $('#error-message').text(result.error.message);
         }
     });
 }
 
 document.getElementById('donate-once-button').addEventListener('click', function () {
+    $('#donate-once-button').attr('disabled', 'true');
+    $('#donate-monthly-button').attr('disabled', 'true');
     var amount = +(document.getElementById('donation-amount').value);
     var req = JSON.stringify({ recurring: false, count: amount, captcha: captchaToken });
     $.post("/.netlify/functions/donate", req,
         function (data) {
             redirect(data.sessionID);
         }, "json"
-    );
+    ).error(function () {
+        $('#error-message').text("An error ocurred. Please reload the page and try again. :(");
+    });
 });
 
 document.getElementById('donate-monthly-button').addEventListener('click', function () {
+    $('#donate-once-button').attr('disabled', 'true');
+    $('#donate-monthly-button').attr('disabled', 'true');
     var amount = +(document.getElementById('donation-amount').value);
     var req = JSON.stringify({ recurring: true, count: amount, captcha: captchaToken });
     $.post("/.netlify/functions/donate", req,
         function (data) {
             redirect(data.sessionID);
         }, "json"
-    );
+    ).error(function () {
+        $('#error-message').text("An error ocurred. Please reload the page and try again. :(");
+    });
 });

@@ -55,7 +55,7 @@ func handler(ctx context.Context, request events.APIGatewayProxyRequest) (*event
 	captchaCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 	if err := verifyRecaptcha(captchaCtx, req.Captcha); err != nil {
-		return nil, fmt.Errorf("captch: %w", err)
+		return nil, fmt.Errorf("captcha: %w", err)
 	}
 
 	// Get the Stripe session
@@ -138,25 +138,25 @@ func verifyRecaptcha(ctx context.Context, token string) error {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("create captcha request: %w", err)
+		return fmt.Errorf("create request: %w", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("captcha check: %d %s", resp.StatusCode, resp.Status)
+		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
 	}
 	bs, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("read captcha response: %w", err)
+		return fmt.Errorf("read response: %w", err)
 	}
 
 	var captchaResponse struct {
 		Success bool
 	}
 	if err := json.Unmarshal(bs, &captchaResponse); err != nil {
-		return fmt.Errorf("unmarshal captcha response: %w", err)
+		return fmt.Errorf("unmarshal response: %w", err)
 	}
 	if !captchaResponse.Success {
-		return errors.New("captcha check failed")
+		return errors.New("check failed")
 	}
 
 	return nil
